@@ -5,7 +5,7 @@ phases:
       - echo "Starting static analysis..."
   build:
     commands:
-      - aws lambda invoke --function-name StaticCodeAnalysis output.json
+      - aws lambda invoke --function-name Staticcode-analysis-function output.json
   post_build:
     commands:
       - echo "Build complete."
