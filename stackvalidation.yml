@@ -1,0 +1,15 @@
+import json
+
+def lambda_handler(event, context):
+    violations = []
+    if 'CidrIp' in event and event['CidrIp'] == "0.0.0.0/0":
+        violations.append("Security group has open access to 0.0.0.0/0.")
+    if violations:
+        return {
+            'status': 'FAILED',
+            'violations': violations
+        }
+    return {
+        'status': 'SUCCESS',
+        'message': 'No violations detected.'
+    }
