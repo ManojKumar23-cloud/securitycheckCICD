@@ -1,18 +1,25 @@
 version: 0.2
+
 phases:
   pre_build:
     commands:
       - echo "Preparing for test stack deployment..."
       - aws cloudformation validate-template --template-body file://test-stack.yaml
+
   build:
     commands:
       - echo "Deploying test stack..."
       - aws cloudformation deploy --template-file test-stack.yaml --stack-name TestStack --capabilities CAPABILITY_NAMED_IAM
+
   post_build:
     commands:
       - echo "Invoking StackValidation Lambda..."
       - aws lambda invoke --function-name StackValidation --payload '{"StackName": "TestStack"}' output.json
       - cat output.json
       - STATUS=$(jq -r '.status' output.json)
-      - if [[ "$STATUS" == "FAILED" ]]; then echo "Security violations found!"; exit 1; fi
+      - |
+        if [[ "$STATUS" == "FAILED" ]]; then 
+          echo "Security violations found!"
+          exit 1
+        fi
       - echo "Test stack validation passed."
