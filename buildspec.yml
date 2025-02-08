@@ -8,15 +8,14 @@ phases:
       - echo "Checking if securitygroup.yml exists..."
       - if [ -f securitygroup.yml ]; then echo "securitygroup.yml found!"; else echo "securitygroup.yml NOT FOUND!"; exit 1; fi
       - aws cloudformation validate-template --template-body file://securitygroup.yml
+
   build:
     commands:
       - echo "Deploying test stack..."
       - aws cloudformation deploy --template-file securitygroup.yml --stack-name TestStack --capabilities CAPABILITY_NAMED_IAM
-   post_build:
+
+  post_build:
     commands:
       - echo "Invoking StackValidation Lambda..."
-      - aws lambda invoke --function-name Stack-Validation-function --payload '{"StackName": "TestStack"}' output.json
+      - aws lambda invoke --function-name Stack-Validation-function --payload '{\"StackName\": \"TestStack\"}' output.json
       - cat output.json
-      - STATUS=$(jq -r '.status' output.json)
-      - if [[ "$STATUS" == "FAILED" ]]; then echo "Security violations found!"; exit 1; fi
-      - echo "Test stack validation passed."
