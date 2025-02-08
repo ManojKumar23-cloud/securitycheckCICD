@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Deploy CloudFormation template from GitHub using CodePipeline
+Description: CI/CD Pipeline for deploying security-critical AWS CloudFormation templates with security checks.
 
 Resources:
-  CodePipelineRole:
+    CodePipelineRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: CodePipelineExecutionRole
@@ -28,30 +28,47 @@ Resources:
                 Resource:
                   - arn:aws:s3:::my-artifact-bucket
                   - arn:aws:s3:::my-artifact-bucket/*
+              
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Resource: arn:aws:codebuild:us-east-1:123456789012:project/SecurityChecksCodeBuild
+
               - Effect: Allow
                 Action:
                   - cloudformation:CreateStack
                   - cloudformation:UpdateStack
                   - cloudformation:DeleteStack
                   - cloudformation:DescribeStacks
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:DescribeChangeSet
                 Resource: arn:aws:cloudformation:us-east-1:123456789012:stack/*
+
               - Effect: Allow
                 Action:
-                  - codepipeline:StartPipelineExecution
-                Resource: '*'
+                  - lambda:InvokeFunction
+                Resource: arn:aws:lambda:us-east-1:123456789012:function:StackValidationLambda
+
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: arn:aws:sns:us-east-1:216989130794:Security-Check-pipeline
 
   MyPipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      Name: DeployCFTemplatePipeline
+      Name: SecurityInfraPipeline
       RoleArn: !GetAtt CodePipelineRole.Arn
       ArtifactStore:
         Type: S3
-        Location: security-check-cicd # Change to your S3 bucket
+        Location: my-artifact-bucket # Change to your S3 bucket for artifacts
       Stages:
         - Name: Source
           Actions:
-            - Name: GitHubSource
+            - Name: SourceAction
               ActionTypeId:
                 Category: Source
                 Owner: ThirdParty
@@ -60,14 +77,29 @@ Resources:
               Configuration:
                 Owner: ManojKumar23-cloud # Replace with GitHub username
                 Repo: securitycheckCICD # Replace with repository name
-                Branch: main # Change as needed
+                Branch: main
                 OAuthToken: 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 # Store securely in AWS Secrets Manager
               OutputArtifacts:
                 - Name: SourceOutput
 
-        - Name: DeployToTest
+        - Name: Build
           Actions:
-            - Name: DeployTestStack
+            - Name: SecurityCheck
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: SecurityChecksCodeBuild # Name of the CodeBuild project
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+
+        - Name: TestDeployment
+          Actions:
+            - Name: DeployToTest
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -75,8 +107,75 @@ Resources:
                 Version: '1'
               Configuration:
                 ActionMode: CREATE_UPDATE
-                StackName: Security-pipeline
-                RoleArn: arn:aws:iam::216989130794:role/CodePipelineExecutionRole # ? Fix: Provide RoleArn
-                TemplatePath: SourceOutput::test-stack.yaml
+                StackName: TestSecurityStack
+                Capabilities: CAPABILITY_NAMED_IAM
+                TemplatePath: BuildOutput::security-group.yaml # Path to CloudFormation file
               InputArtifacts:
-                - Name: SourceOutput
+                - Name: BuildOutput
+
+        - Name: ValidateStack
+          Actions:
+            - Name: StackValidation
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: Lambda
+                Version: '1'
+              Configuration:
+                FunctionName: StackValidationLambda # Lambda function to validate test stack
+              InputArtifacts:
+                - Name: BuildOutput
+
+        - Name: DeleteTestStack
+          Actions:
+            - Name: DeleteTestStack
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              Configuration:
+                ActionMode: DELETE_ONLY
+                StackName: TestSecurityStack
+
+        - Name: ManualApproval
+          Actions:
+            - Name: ApprovalBeforeProd
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Provider: Manual
+                Version: '1'
+              Configuration:
+                NotificationArn: arn:aws:sns:us-east-1:216989130794:Security-Check-pipeline # Change SNS topic
+                CustomData: Please review the test stack before deploying to production.
+
+        - Name: PrepareProduction
+          Actions:
+            - Name: CreateChangeSet
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                StackName: ProductionSecurityStack
+                ChangeSetName: ProductionChangeSet
+                Capabilities: CAPABILITY_NAMED_IAM
+                TemplatePath: BuildOutput::security-group.yaml
+              InputArtifacts:
+                - Name: BuildOutput
+
+        - Name: DeployToProduction
+          Actions:
+            - Name: ExecuteChangeSet
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                StackName: ProductionSecurityStack
+                ChangeSetName: ProductionChangeSet
