@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy CloudFormation template from GitHub using CodePipeline
+
+Resources:
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CodePipelineExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: CodePipelineMinimalPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource:
+                  - arn:aws:s3:::my-artifact-bucket
+                  - arn:aws:s3:::my-artifact-bucket/*
+              - Effect: Allow
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStacks
+                Resource: arn:aws:cloudformation:us-east-1:123456789012:stack/*
+              - Effect: Allow
+                Action:
+                  - codepipeline:StartPipelineExecution
+                Resource: '*'
+
+  MyPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: DeployCFTemplatePipeline
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: security-check-cicd # Change to your S3 bucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHubSource
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: '1'
+              Configuration:
+                Owner: ManojKumar23-cloud # Replace with GitHub username
+                Repo: securitycheckCICD # Replace with repository name
+                Branch: main # Change as needed
+                OAuthToken: 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 # Store securely in AWS Secrets Manager
+              OutputArtifacts:
+                - Name: SourceOutput
+
+        - Name: DeployToTest
+          Actions:
+            - Name: DeployTestStack
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                StackName: Security-pipeline
+                RoleArn: arn:aws:iam::216989130794:role/CodePipelineExecutionRole # ? Fix: Provide RoleArn
+                TemplatePath: SourceOutput::test-stack.yaml
+              InputArtifacts:
+                - Name: SourceOutput
