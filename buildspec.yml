@@ -16,7 +16,6 @@ phases:
 
   post_build:
     commands:
-      - echo "Invoking StackValidation Lambda..."
-    - aws lambda invoke --function-name Stack-Validation-function --payload '{\"StackName\": \"TestStack\"}' --cli-binary-format raw-in-base64-out output.json
-
+      - echo "Invoking StackValidation Lambda"
+      - aws lambda invoke --function-name Stack-Validation-function --payload '{\"StackName\": \"TestStack\"}' --cli-binary-format raw-in-base64-out output.json
       - cat output.json
