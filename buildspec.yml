@@ -2,10 +2,12 @@ version: 0.2
 phases:
   pre_build:
     commands:
-      - echo "Starting static analysis..."
+      - echo "Preparing for test stack deployment..."
+      - aws cloudformation validate-template --template-body file://test-stack.yaml
   build:
     commands:
-      - aws lambda invoke --function-name Staticcode-analysis-function output.json
+      - echo "Deploying test stack..."
+      - aws cloudformation deploy --template-file test-stack.yaml --stack-name TestStack --capabilities CAPABILITY_NAMED_IAM
   post_build:
     commands:
-      - echo "Build complete."
+      - echo "Test stack deployed successfully."
