@@ -1,27 +1,18 @@
 version: 0.2
-
 phases:
   pre_build:
     commands:
       - echo "Preparing for test stack deployment..."
-      - ls -R   # ✅ List all files and directories
-      - pwd     # ✅ Print the current working directory
-      - echo "Checking if securitygroup.yml exists..."
-      - if [ -f securitygroup.yml ]; then echo "securitygroup.yml found!"; else echo "securitygroup.yml NOT FOUND!"; exit 1; fi
-      - aws cloudformation validate-template --template-body file://securitygroup.yml || exit 1  # ✅ Exit if validation fails
-
+      - aws cloudformation validate-template --template-body file://test-stack.yaml
   build:
     commands:
       - echo "Deploying test stack..."
-      - aws cloudformation deploy --template-file securitygroup.yml --stack-name TestStack --capabilities CAPABILITY_NAMED_IAM
-
+      - aws cloudformation deploy --template-file test-stack.yaml --stack-name TestStack --capabilities CAPABILITY_NAMED_IAM
   post_build:
     commands:
-      - echo "Invoking StackValidation Lambda"
-      - |
-        aws lambda invoke \
-          --function-name Stack-Validation-function \
-          --payload '{"StackName": "TestStack"}' \
-          --cli-binary-format raw-in-base64-out \
-          output.json
+      - echo "Invoking StackValidation Lambda..."
+      - aws lambda invoke --function-name StackValidation --payload '{"StackName": "TestStack"}' output.json
       - cat output.json
+      - STATUS=$(jq -r '.status' output.json)
+      - if [[ "$STATUS" == "FAILED" ]]; then echo "Security violations found!"; exit 1; fi
+      - echo "Test stack validation passed."
