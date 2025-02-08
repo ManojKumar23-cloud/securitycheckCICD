@@ -3,11 +3,11 @@ phases:
   pre_build:
     commands:
       - echo "Preparing for test stack deployment..."
-      - aws cloudformation validate-template --template-body file://securitygroup.yml
+      - aws cloudformation validate-template --template-body file://securitycheckCICD/securitygroup.yml
   build:
     commands:
       - echo "Deploying test stack..."
-      - aws cloudformation deploy --template-file securitygroup.yml --stack-name TestStack --capabilities CAPABILITY_NAMED_IAM
+      - aws cloudformation deploy --template-file securitycheckCICD/securitygroup.yml --stack-name TestStack --capabilities CAPABILITY_NAMED_IAM
   post_build:
     commands:
       - echo "Test stack deployed successfully."
