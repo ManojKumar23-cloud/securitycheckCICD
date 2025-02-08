@@ -19,3 +19,12 @@ phases:
       - echo "Invoking StackValidation Lambda"
       - aws lambda invoke --function-name Stack-Validation-function --payload '{\"StackName\": \"TestStack\"}' --cli-binary-format raw-in-base64-out output.json
       - cat output.json
+       - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: arn:aws:lambda:us-east-1:216989130794:function:Stack-Validation-function
+
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: arn:aws:sns:us-east-1:216989130794:Security-Check-pipeline
