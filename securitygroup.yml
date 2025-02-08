@@ -1,15 +1,18 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for a security group
+
 Resources:
-  MySecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupName: DemoSecuritycheckSG  # Add your Security Group Name here
-      GroupDescription: Allow HTTP and HTTPS
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and HTTP
+      VpcId: vpc-0b9de864f8d26236d # Replace with your VPC ID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
