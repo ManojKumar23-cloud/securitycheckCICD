@@ -3,11 +3,15 @@ phases:
   pre_build:
     commands:
       - echo "Preparing for test stack deployment..."
-      - aws cloudformation validate-template --template-body file://securitycheckCICD/securitygroup.yml
+      - ls -R    # Debug: List all files and folders
+      - pwd      # Debug: Print the current directory
+      - cd securitycheckCICD  # Move into the correct folder
+      - aws cloudformation validate-template --template-body file://securitygroup.yml
   build:
     commands:
       - echo "Deploying test stack..."
-      - aws cloudformation deploy --template-file securitycheckCICD/securitygroup.yml --stack-name TestStack --capabilities CAPABILITY_NAMED_IAM
+      - cd securitycheckCICD  # Ensure we are in the right folder
+      - aws cloudformation deploy --template-file securitygroup.yml --stack-name TestStack --capabilities CAPABILITY_NAMED_IAM
   post_build:
     commands:
       - echo "Test stack deployed successfully."
