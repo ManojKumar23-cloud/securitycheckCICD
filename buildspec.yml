@@ -3,6 +3,8 @@ version: 0.2
 phases:
   pre_build:
     commands:
+      - echo "Fixing non-breaking spaces in lambda_function.py..."
+      - sed -i 's/\xC2\xA0/ /g' lambda_function.py
       - echo "Preparing for test stack deployment..."
       - aws cloudformation validate-template --template-body file://securitygroup.yml
 
