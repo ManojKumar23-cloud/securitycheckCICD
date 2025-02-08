@@ -1,30 +1,7 @@
 version: 0.2
 phases:
-  pre_build:
-    commands:
-      - echo "Preparing for test stack deployment..."
-      - ls -R   # ✅ List all files and directories
-      - pwd     # ✅ Print the current working directory
-      - echo "Checking if securitygroup.yml exists..."
-      - if [ -f securitygroup.yml ]; then echo "securitygroup.yml found!"; else echo "securitygroup.yml NOT FOUND!"; exit 1; fi
-      - aws cloudformation validate-template --template-body file://securitygroup.yml
-
   build:
     commands:
-      - echo "Deploying test stack..."
-      - aws cloudformation deploy --template-file securitygroup.yml --stack-name TestStack --capabilities CAPABILITY_NAMED_IAM
-
-  post_build:
-    commands:
-      - echo "Invoking StackValidation Lambda"
+      - echo "Invoking StackValidation Lambda..."
       - aws lambda invoke --function-name Stack-Validation-function --payload '{\"StackName\": \"TestStack\"}' --cli-binary-format raw-in-base64-out output.json
       - cat output.json
-       - Effect: Allow
-                Action:
-                  - lambda:InvokeFunction
-                Resource: arn:aws:lambda:us-east-1:216989130794:function:Stack-Validation-function
-
-              - Effect: Allow
-                Action:
-                  - sns:Publish
-                Resource: arn:aws:sns:us-east-1:216989130794:Security-Check-pipeline
