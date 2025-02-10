@@ -28,3 +28,4 @@ phases:
             cat output.json  # Show details of violations
             exit 1
           fi
+        - echo "Test stack validation passed."
