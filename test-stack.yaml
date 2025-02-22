@@ -3,7 +3,7 @@ Resources:
   TestSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: "Test environment security group"
+      GroupDescription: "production environment security group"
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
