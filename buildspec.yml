@@ -17,7 +17,7 @@ phases:
       - |
         aws lambda invoke \
           --function-name Stack-Validation-function-01 \
-          --payload '{"StackName": "TestStack"}' \
+          --payload '{"StackName": "TestStack-01"}' \
           --cli-binary-format raw-in-base64-out \
           output.json
       - cat output.json
@@ -27,4 +27,4 @@ phases:
           echo "Security violations found!"
           exit 1
         fi
-      - echo "Test stack validation passed."
+      - echo "Test stack-01 validation passed."
