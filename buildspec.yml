@@ -9,14 +9,14 @@ phases:
   build:
     commands:
       - echo "Deploying test stack..."
-      - aws cloudformation deploy --template-file securitygroup.yml --stack-name TestStack --capabilities CAPABILITY_NAMED_IAM
+      - aws cloudformation deploy --template-file securitygroup.yml --stack-name TestStack-01 --capabilities CAPABILITY_NAMED_IAM
 
   post_build:
     commands:
       - echo "Invoking StackValidation Lambda..."
       - |
         aws lambda invoke \
-          --function-name Stack-Validation-function \
+          --function-name Stack-Validation-function-01 \
           --payload '{"StackName": "TestStack"}' \
           --cli-binary-format raw-in-base64-out \
           output.json
