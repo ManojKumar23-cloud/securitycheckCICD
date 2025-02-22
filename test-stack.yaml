@@ -3,6 +3,7 @@ Resources:
   TestSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
+      GroupName: production-SG  # ✅ Add a name here
       GroupDescription: "production environment security group"
       SecurityGroupIngress:
         - IpProtocol: tcp
