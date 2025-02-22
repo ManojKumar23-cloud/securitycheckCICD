@@ -5,7 +5,7 @@ Resources:
   MySecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: CustomsecuritycheckSG  # ✅ Add a name here
+      GroupName: CustomsecuritycheckSG-01  # ✅ Add a name here
       GroupDescription: Allow SSH and HTTP
       VpcId: vpc-0b9de864f8d26236d # Replace with your VPC ID
       SecurityGroupIngress:
