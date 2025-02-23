@@ -9,7 +9,7 @@ phases:
   build:
     commands:
       - echo "Deploying test stack..."
-      - aws cloudformation deploy --template-file securitygroup.yml --stack-name TestStack-01 --capabilities CAPABILITY_NAMED_IAM
+      - aws cloudformation deploy --template-file securitygroup.yml --stack-name TestStack-02 --capabilities CAPABILITY_NAMED_IAM
 
   post_build:
     commands:
@@ -17,7 +17,7 @@ phases:
       - |
         aws lambda invoke \
           --function-name Stack-Validation-function-01 \
-          --payload '{"StackName": "TestStack-01"}' \
+          --payload '{"StackName": "TestStack-02"}' \
           --cli-binary-format raw-in-base64-out \
           output.json
       - cat output.json
@@ -27,4 +27,4 @@ phases:
           echo "Security violations found!"
           exit 1
         fi
-      - echo "Test stack-01 validation passed."
+      - echo "Test stack-02 validation passed."
